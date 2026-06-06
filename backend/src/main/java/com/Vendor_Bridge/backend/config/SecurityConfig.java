@@ -70,6 +70,9 @@ public class SecurityConfig{
                                 .requestMatchers(HttpMethod.POST,"/api/auth/register/staff").hasRole("ADMIN")
 //                                .requestMatchers(HttpMethod.GET,"/api/category/**").permitAll()
                                .requestMatchers("/api/auth/login").permitAll()
+                                .requestMatchers("/api/auth/users/vendors").hasAnyRole("ADMIN","OFFICER")
+                                .requestMatchers("/api/rfqs/create").hasAnyRole("ADMIN","OFFICER")
+
 
                                 .anyRequest().authenticated()
 

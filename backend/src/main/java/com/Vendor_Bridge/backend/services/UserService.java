@@ -1,6 +1,7 @@
 package com.Vendor_Bridge.backend.services;
 
 import com.Vendor_Bridge.backend.dtos.registerRequest;
+import com.Vendor_Bridge.backend.models.Role;
 import com.Vendor_Bridge.backend.models.User;
 import com.Vendor_Bridge.backend.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -25,6 +28,15 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username)throws UsernameNotFoundException {
         return userRepository.findByEmail(username).orElseThrow(()->new UsernameNotFoundException("User not found in mysql: "+username));
+    }
+
+    public List<User> fetchByRole(Role role) throws  Exception{
+        try{
+             List<User> users = userRepository.findByRole(role);
+             return users;
+        } catch (Exception e) {
+            throw  new Exception(e.getMessage());
+        }
     }
 
     @Transactional

@@ -1,111 +1,237 @@
 // src/pages/RFQs.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const RFQs = () => {
+  const API_BASE_URL = 'http://localhost:8080/api';
+
+  // --- STATE MANAGEMENT ---
+  const [formData, setFormData] = useState({ title: '', description: '', deadline: '' });
+  const [lineItems, setLineItems] = useState([{ item: '', quantity: '', unit: 'NOS' }]);
+  
+  const [availableVendors, setAvailableVendors] = useState([]);
+  const [selectedVendorIds, setSelectedVendorIds] = useState([]);
+  
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  // --- FETCH VENDORS ON LOAD ---
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        const userStr = localStorage.getItem('vendorBridgeUser');
+        if (!userStr) return;
+        const { token } = JSON.parse(userStr);
+
+        // Assumes you have an endpoint to fetch users by role. 
+        // See Step 2 below if you haven't built this yet!
+        const response = await axios.get(`${API_BASE_URL}/auth/users/vendors`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setAvailableVendors(response.data);
+      } catch (error) {
+        console.error("Failed to fetch vendors", error);
+      }
+    };
+    fetchVendors();
+  }, []);
+
+  // --- HANDLERS ---
+  const handleBasicChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Dynamic Line Item Handlers
+  const handleLineItemChange = (index, field, value) => {
+    const updatedItems = [...lineItems];
+    updatedItems[index][field] = value;
+    setLineItems(updatedItems);
+  };
+
+  const addLineItem = () => {
+    setLineItems([...lineItems, { item: '', quantity: '', unit: 'NOS' }]);
+  };
+
+  const removeLineItem = (index) => {
+    if (lineItems.length === 1) return; // Keep at least one row
+    const updatedItems = lineItems.filter((_, i) => i !== index);
+    setLineItems(updatedItems);
+  };
+
+  // Vendor Selection Handler
+  const toggleVendor = (vendorId) => {
+    if (selectedVendorIds.includes(vendorId)) {
+      setSelectedVendorIds(selectedVendorIds.filter(id => id !== vendorId));
+    } else {
+      setSelectedVendorIds([...selectedVendorIds, vendorId]);
+    }
+  };
+
+  // --- SUBMIT ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const userStr = localStorage.getItem('vendorBridgeUser');
+      if (!userStr) throw new Error("Authentication missing. Please log in.");
+      const { token } = JSON.parse(userStr);
+
+      // Clean and format payload for Spring Boot
+      const payload = {
+        title: formData.title,
+        description: formData.description,
+        deadline: formData.deadline ? `${formData.deadline}T23:59:59` : null,
+        lineItems: lineItems.map(li => ({
+          item: li.item,
+          quantity: parseInt(li.quantity, 10),
+          unit: li.unit
+        })),
+        vendorIds: selectedVendorIds
+      };
+
+      await axios.post(`${API_BASE_URL}/rfqs/create`, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setMessage({ type: 'success', text: 'RFQ successfully created and assigned!' });
+      
+      // Reset Form
+      setFormData({ title: '', description: '', deadline: '' });
+      setLineItems([{ item: '', quantity: '', unit: 'NOS' }]);
+      setSelectedVendorIds([]);
+
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data || error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 pb-12">
       <div>
         <h2 className="text-2xl font-semibold text-[#212529]">Create RFQ's</h2>
-        <p className="text-gray-500 mt-1">new request for quotation</p>
+        <p className="text-gray-500 mt-1">Configure and assign a new request for quotation</p>
       </div>
 
-      {/* Progress Stepper */}
-      <div className="flex items-center justify-between w-full max-w-2xl mb-8">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#017E84] text-white font-bold text-sm">1</div>
-        <div className="flex-1 h-px bg-gray-300 mx-4"></div>
-        <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-300 text-gray-400 font-bold text-sm">2</div>
-        <div className="flex-1 h-px bg-gray-300 mx-4"></div>
-        <div className="flex items-center justify-center w-8 h-8 rounded-full border-2 border-gray-300 text-gray-400 font-bold text-sm">3</div>
-      </div>
-
-      <div className="bg-white p-8 border border-gray-200 rounded-lg shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-12">
-        
-        {/* Left Column: Form Details */}
-        <div className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">RFQ's title*</label>
-            <input type="text" defaultValue="Office Furniture procurement Q2" className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-            <input type="text" defaultValue="Furniture" className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deadline*</label>
-            <input type="date" defaultValue="2025-06-15" className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:outline-none" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea rows="3" defaultValue="Ergonomic chairs and standing desks for 3rd floor" className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:outline-none"></textarea>
-          </div>
+      {message.text && (
+        <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {message.text}
         </div>
+      )}
 
-        {/* Right Column: Line Items, Assignments & Attachments */}
-        <div className="space-y-6">
+      <form onSubmit={handleSubmit}>
+        <div className="bg-white p-6 md:p-8 border border-gray-200 rounded-lg shadow-sm grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
           
-          {/* Line Items Table */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Line items</label>
-            <table className="w-full text-sm text-left border border-gray-200 rounded">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Item</th>
-                  <th className="px-4 py-2 font-medium">Qty</th>
-                  <th className="px-4 py-2 font-medium">Unit</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="px-4 py-2">Ergonomic chair</td>
-                  <td className="px-4 py-2">25</td>
-                  <td className="px-4 py-2">NOS</td>
-                </tr>
-                <tr>
-                  <td className="px-4 py-2">Standing desks</td>
-                  <td className="px-4 py-2">10</td>
-                  <td className="px-4 py-2">NOS</td>
-                </tr>
-              </tbody>
-            </table>
-            <button className="mt-2 text-sm border border-gray-300 px-3 py-1 rounded hover:bg-gray-50">+ add line item</button>
-          </div>
-
-          {/* Assign Vendors */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 border-t border-gray-200 pt-4 uppercase tracking-wider">Assign Vendors</label>
-            <div className="border border-gray-300 rounded p-2 space-y-2">
-              <div className="flex justify-between items-center bg-gray-50 px-3 py-1 rounded text-sm">
-                <span>Infra Supplies Pvt ltd</span>
-                <button className="text-gray-400 hover:text-red-500">×</button>
-              </div>
-              <div className="flex justify-between items-center bg-gray-50 px-3 py-1 rounded text-sm">
-                <span>Techcore LTD</span>
-                <button className="text-gray-400 hover:text-red-500">×</button>
-              </div>
-              <button className="text-sm text-[#017E84] px-2 py-1 hover:underline">+ add vendor</button>
+          {/* LEFT COLUMN: Basic Details */}
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">1. Basic Details</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">RFQ Title*</label>
+              <input 
+                type="text" name="title" value={formData.title} onChange={handleBasicChange} required
+                placeholder="e.g., Q3 Laptops Procurement" 
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Deadline*</label>
+              <input 
+                type="date" name="deadline" value={formData.deadline} onChange={handleBasicChange} required
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] outline-none" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea 
+                rows="4" name="description" value={formData.description} onChange={handleBasicChange}
+                placeholder="Detailed requirements or instructions..." 
+                className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] outline-none"
+              ></textarea>
             </div>
           </div>
 
-          {/* Attachments (Drag & Drop) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 border-t border-gray-200 pt-4 uppercase tracking-wider">Attachments</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-[#714B67] transition-colors bg-white">
-              {/* Optional SVG Icon to make it look professional */}
-              <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span className="text-sm text-gray-500 font-medium">Drag & drop files or click to upload</span>
+          {/* RIGHT COLUMN: Line Items & Vendors */}
+          <div className="space-y-8">
+            
+            {/* Line Items Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">2. Line Items</h3>
+              <div className="border border-gray-200 rounded overflow-hidden">
+                <table className="w-full text-sm text-left">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Item Description</th>
+                      <th className="px-3 py-2 font-medium w-24">Qty</th>
+                      <th className="px-3 py-2 font-medium w-24">Unit</th>
+                      <th className="px-3 py-2 font-medium w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lineItems.map((li, index) => (
+                      <tr key={index} className="border-b border-gray-100 bg-white">
+                        <td className="p-2">
+                          <input type="text" required value={li.item} onChange={(e) => handleLineItemChange(index, 'item', e.target.value)} placeholder="Item name..." className="w-full px-2 py-1 border border-gray-300 rounded outline-none focus:border-[#714B67]" />
+                        </td>
+                        <td className="p-2">
+                          <input type="number" required min="1" value={li.quantity} onChange={(e) => handleLineItemChange(index, 'quantity', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded outline-none focus:border-[#714B67]" />
+                        </td>
+                        <td className="p-2">
+                          <select value={li.unit} onChange={(e) => handleLineItemChange(index, 'unit', e.target.value)} className="w-full px-2 py-1 border border-gray-300 rounded outline-none focus:border-[#714B67] bg-white">
+                            <option value="NOS">NOS</option>
+                            <option value="KG">KG</option>
+                            <option value="LTR">LTR</option>
+                            <option value="BOX">BOX</option>
+                          </select>
+                        </td>
+                        <td className="p-2 text-center">
+                          <button type="button" onClick={() => removeLineItem(index)} className="text-red-400 hover:text-red-600 font-bold" title="Remove item">×</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" onClick={addLineItem} className="mt-3 text-sm text-[#017E84] font-medium hover:underline">+ Add another item</button>
             </div>
-          </div>
 
+            {/* Vendor Selection Section */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">3. Assign Vendors</h3>
+              {availableVendors.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">No vendors found in the system.</p>
+              ) : (
+                <div className="border border-gray-200 rounded p-3 max-h-48 overflow-y-auto space-y-2 bg-gray-50">
+                  {availableVendors.map(vendor => (
+                    <label key={vendor.id} className="flex items-center p-2 bg-white border border-gray-100 rounded cursor-pointer hover:border-[#714B67] transition-colors">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedVendorIds.includes(vendor.id)}
+                        onChange={() => toggleVendor(vendor.id)}
+                        className="w-4 h-4 text-[#714B67] rounded focus:ring-[#714B67]"
+                      />
+                      <span className="ml-3 text-sm font-medium text-gray-700">{vendor.email}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
-      </div>
 
-      {/* Bottom Actions */}
-      <div className="flex space-x-4 border-t border-gray-200 pt-6">
-        <button className="bg-[#017E84] text-white px-6 py-2 rounded font-medium hover:bg-[#01686d] transition-colors">Save & Send to Vendors</button>
-        <button className="border border-gray-300 bg-white px-6 py-2 rounded hover:bg-gray-50 transition-colors">Save as Draft</button>
-      </div>
+        {/* Submit Actions */}
+        <div className="flex space-x-4 mt-6">
+          <button type="submit" disabled={loading} className="bg-[#017E84] text-white px-8 py-2.5 rounded font-medium hover:bg-[#01686d] transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+            {loading ? 'Processing...' : 'Publish RFQ'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

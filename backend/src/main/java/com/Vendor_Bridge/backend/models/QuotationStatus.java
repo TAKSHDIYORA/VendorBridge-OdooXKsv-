@@ -1,4 +1,7 @@
 package com.Vendor_Bridge.backend.models;
 
-public class QuatationStatus {
+public enum QuotationStatus {
+    SUBMITTED, // Vendor just sent it
+    ACCEPTED,  // Officer chose this winning bid
+    REJECTED   // Officer chose someone else
 }

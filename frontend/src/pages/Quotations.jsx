@@ -1,151 +1,228 @@
 // src/pages/Quotations.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const Quotations = () => {
-  // State for the quotation line items so we can auto-calculate totals
-  const [items, setItems] = useState([
-    { id: 1, name: 'Ergonomic chair', qty: 25, unitPrice: 3500, deliveryDays: 7 },
-    { id: 2, name: 'Standing desk', qty: 10, unitPrice: 8200, deliveryDays: 14 } // Fixed wireframe typo from "Tech Core" to the actual item
-  ]);
+  const API_BASE_URL = 'http://localhost:8080/api';
 
-  const [taxPercent, setTaxPercent] = useState(18);
-  const [notes, setNotes] = useState('Payment terms: 20 days net...');
+  // --- STATE MANAGEMENT ---
+  const [availableRfqs, setAvailableRfqs] = useState([]);
+  const [selectedRfq, setSelectedRfq] = useState(null);
+  
+  // Bidding State
+  const [bids, setBids] = useState({}); // Stores prices mapped by rfqLineItemId
+  const [remarks, setRemarks] = useState('');
+  
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Handlers to update line item values
-  const handleItemChange = (id, field, value) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, [field]: Number(value) } : item
-    ));
+  // --- FETCH AVAILABLE RFQS ---
+  useEffect(() => {
+    const fetchRfqs = async () => {
+      try {
+        const userStr = localStorage.getItem('vendorBridgeUser');
+        if (!userStr) return;
+        const { token } = JSON.parse(userStr);
+
+        const response = await axios.get(`${API_BASE_URL}/rfqs/all`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        // Filter to only show OPEN RFQs
+        const openRfqs = response.data.filter(rfq => rfq.status === 'OPEN');
+        setAvailableRfqs(openRfqs);
+      } catch (error) {
+        console.error("Failed to fetch RFQs", error);
+      }
+    };
+    fetchRfqs();
+  }, []);
+
+  // --- HANDLERS ---
+  const handleRfqSelect = (e) => {
+    const rfqId = parseInt(e.target.value);
+    const rfq = availableRfqs.find(r => r.id === rfqId);
+    setSelectedRfq(rfq || null);
+    
+    // Reset bids when a new RFQ is selected
+    setBids({});
+    setRemarks('');
+    setMessage({ type: '', text: '' });
   };
 
-  // Calculations
-  const subtotal = items.reduce((sum, item) => sum + (item.qty * item.unitPrice), 0);
-  const taxAmount = subtotal * (taxPercent / 100);
-  const grandTotal = subtotal + taxAmount;
+  const handlePriceChange = (lineItemId, value) => {
+    setBids(prev => ({
+      ...prev,
+      [lineItemId]: parseFloat(value) || 0
+    }));
+  };
+
+  // --- CALCULATIONS ---
+  const calculateLineTotal = (lineItemId, quantity) => {
+    const price = bids[lineItemId] || 0;
+    return price * quantity;
+  };
+
+  const calculateGrandTotal = () => {
+    if (!selectedRfq || !selectedRfq.lineItems) return 0;
+    return selectedRfq.lineItems.reduce((total, item) => {
+      return total + calculateLineTotal(item.id, item.quantity);
+    }, 0);
+  };
+
+  // --- SUBMIT ---
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const userStr = localStorage.getItem('vendorBridgeUser');
+      if (!userStr) throw new Error("Authentication missing.");
+      const { token } = JSON.parse(userStr);
+
+      // Map our bids state into the exact array structure Spring Boot expects
+      const itemsPayload = selectedRfq.lineItems.map(item => ({
+        rfqLineItemId: item.id,
+        unitPrice: bids[item.id] || 0
+      }));
+
+      const payload = {
+        rfqId: selectedRfq.id,
+        remarks: remarks,
+        items: itemsPayload
+      };
+
+      await axios.post(`${API_BASE_URL}/quotations/submit`, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setMessage({ type: 'success', text: 'Quotation submitted successfully!' });
+      setSelectedRfq(null); // Clear view on success
+      setBids({});
+
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data || error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      
-      {/* Header */}
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div>
-        <h2 className="text-2xl font-semibold text-[#212529]">Submit Quotations</h2>
-        <p className="text-gray-500 mt-1">RFQ: office furniture procurement q2 - deadline 15 June 2025</p>
+        <h2 className="text-2xl font-semibold text-[#212529]">Submit Quotation</h2>
+        <p className="text-gray-500 mt-1">Review open RFQs and submit your pricing</p>
       </div>
 
-      {/* RFQ Summary Card */}
-      <div className="bg-white p-5 border border-gray-200 rounded-lg shadow-sm">
-        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">RFQ Summary</h3>
-        <p className="text-sm text-[#212529] font-medium">
-          Ergonomic chair * 25, standing desk * 10 - category furniture
-        </p>
-      </div>
-
-      {/* Quotation Table Area */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-sm font-semibold text-gray-700">Your Quotation</h3>
+      {message.text && (
+        <div className={`p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {message.text}
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-white text-xs text-gray-500 border-b border-gray-200">
-                <th className="px-6 py-3 font-medium w-1/4">Item</th>
-                <th className="px-6 py-3 font-medium w-1/12 text-center">Qty</th>
-                <th className="px-6 py-3 font-medium w-1/4">Unit price (₹)</th>
-                <th className="px-6 py-3 font-medium w-1/6">Total</th>
-                <th className="px-6 py-3 font-medium w-1/4">Delivery (days)</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-gray-700 divide-y divide-gray-100">
-              {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-[#212529]">{item.name}</td>
-                  <td className="px-6 py-4 text-center">{item.qty}</td>
-                  <td className="px-6 py-4">
-                    <input 
-                      type="number" 
-                      value={item.unitPrice}
-                      onChange={(e) => handleItemChange(item.id, 'unitPrice', e.target.value)}
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67]"
-                    />
-                  </td>
-                  <td className="px-6 py-4 font-medium">
-                    ₹ {(item.qty * item.unitPrice).toLocaleString('en-IN')}
-                  </td>
-                  <td className="px-6 py-4">
-                    <input 
-                      type="number" 
-                      value={item.deliveryDays}
-                      onChange={(e) => handleItemChange(item.id, 'deliveryDays', e.target.value)}
-                      className="w-24 px-3 py-1.5 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67]"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      )}
+
+      {/* Step 1: Select RFQ */}
+      <div className="bg-white p-6 border border-gray-200 rounded-lg shadow-sm">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Select an Open RFQ to Bid On</label>
+        <select 
+          onChange={handleRfqSelect} 
+          className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] outline-none bg-white"
+        >
+          <option value="">-- Select RFQ --</option>
+          {availableRfqs.map(rfq => (
+            <option key={rfq.id} value={rfq.id}>
+              {rfq.title} (Deadline: {new Date(rfq.deadline).toLocaleDateString()})
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Bottom Layout: Settings & Totals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
-        
-        {/* Left Side: Tax & Notes */}
-        <div className="space-y-5">
+      {/* Step 2: Bidding Form (Only visible if RFQ is selected) */}
+      {selectedRfq && (
+        <form onSubmit={handleSubmit} className="bg-white p-6 md:p-8 border border-gray-200 rounded-lg shadow-sm space-y-8">
+          
+          {/* RFQ Details Summary */}
+          <div className="bg-gray-50 p-4 rounded border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800">{selectedRfq.title}</h3>
+            <p className="text-sm text-gray-600 mt-1">{selectedRfq.description}</p>
+          </div>
+
+          {/* Line Items Pricing Table */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">tax / GST %</label>
-            <div className="relative w-1/2">
-              <input 
-                type="number" 
-                value={taxPercent}
-                onChange={(e) => setTaxPercent(Number(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67]"
-              />
-              <span className="absolute right-3 top-2.5 text-gray-400">%</span>
+            <h3 className="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Provide Pricing</h3>
+            <div className="overflow-x-auto border border-gray-200 rounded">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Item</th>
+                    <th className="px-4 py-3 font-medium w-24 text-center">Qty</th>
+                    <th className="px-4 py-3 font-medium w-32">Unit Price (₹)</th>
+                    <th className="px-4 py-3 font-medium w-32 text-right">Line Total (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedRfq.lineItems?.map(item => (
+                    <tr key={item.id} className="border-b border-gray-100 bg-white">
+                      <td className="px-4 py-3 text-gray-800 font-medium">{item.item}</td>
+                      <td className="px-4 py-3 text-center text-gray-600">{item.quantity} {item.unit}</td>
+                      <td className="px-4 py-3">
+                        <input 
+                          type="number" 
+                          min="0" 
+                          step="0.01"
+                          required
+                          value={bids[item.id] || ''} 
+                          onChange={(e) => handlePriceChange(item.id, e.target.value)}
+                          placeholder="0.00"
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded outline-none focus:border-[#714B67] text-right" 
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right font-semibold text-[#017E84]">
+                        ₹{calculateLineTotal(item.id, item.quantity).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50 border-t border-gray-200">
+                  <tr>
+                    <td colSpan="3" className="px-4 py-3 text-right font-bold text-gray-800">Grand Total:</td>
+                    <td className="px-4 py-3 text-right font-bold text-xl text-[#714B67]">
+                      ₹{calculateGrandTotal().toFixed(2)}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
+
+          {/* Remarks & Terms */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Note / terms</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Remarks / Vendor Terms</label>
             <textarea 
-              rows="4" 
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67]"
+              rows="3" 
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="e.g., Delivery within 14 days of PO. Prices inclusive of all taxes." 
+              className="w-full px-4 py-2 border border-gray-300 rounded focus:border-[#714B67] outline-none"
             ></textarea>
           </div>
-        </div>
 
-        {/* Right Side: Calculation Summary */}
-        <div className="flex justify-end">
-          <div className="w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-sm p-6 space-y-4">
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Subtotal</span>
-              <span className="font-medium text-[#212529]">₹ {subtotal.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>GST ({taxPercent}%)</span>
-              <span className="font-medium text-[#212529]">₹ {taxAmount.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
-              <span className="text-base font-bold text-[#212529]">Grand total</span>
-              <span className="text-xl font-bold text-[#017E84]">₹ {grandTotal.toLocaleString('en-IN')}</span>
-            </div>
+          {/* Submit Action */}
+          <div className="flex justify-end pt-4 border-t border-gray-200">
+            <button 
+              type="submit" 
+              disabled={loading || calculateGrandTotal() === 0} 
+              className="bg-[#017E84] text-white px-8 py-2.5 rounded font-medium hover:bg-[#01686d] transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Submitting...' : 'Submit Official Quotation'}
+            </button>
           </div>
-        </div>
 
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex space-x-4 border-t border-gray-200 pt-6">
-        <button className="bg-[#714B67] text-white px-8 py-2.5 rounded font-medium hover:bg-[#5a3c52] transition-colors shadow-sm">
-          Submit Quotation
-        </button>
-        <button className="border border-gray-300 bg-white text-gray-700 px-8 py-2.5 rounded hover:bg-gray-50 transition-colors shadow-sm">
-          Save Draft
-        </button>
-      </div>
-
+        </form>
+      )}
     </div>
   );
 };
