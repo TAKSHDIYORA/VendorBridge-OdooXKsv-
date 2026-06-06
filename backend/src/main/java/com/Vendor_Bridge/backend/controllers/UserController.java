@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.Vendor_Bridge.backend.models.Role.ADMIN;
+import static com.Vendor_Bridge.backend.models.Role.VENDOR;
+
 @RestController
 @RequestMapping("/api/auth")
 public class UserController {
@@ -31,13 +34,26 @@ public class UserController {
         this.jwtService = jwtService;
     }
 
-    @PostMapping("/register")
+    @PostMapping("/register/vendor")
     public ResponseEntity<?> registerUser(@RequestBody registerRequest regReq){
         try{
+            regReq.setRole(VENDOR);
              userService.registerUser(regReq);
              return new ResponseEntity<String>("user registerd successfully!!",HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<String>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @PostMapping("/register/staff")
+    public ResponseEntity<?> registerStaff(@RequestBody registerRequest regReq){
+        try{
+            if(regReq.getRole()==ADMIN){
+                return new ResponseEntity<String>("can't register the admin",HttpStatus.UNAUTHORIZED);
+            }
+            userService.registerUser(regReq);
+            return new ResponseEntity<String>("user registerd successfully!!",HttpStatus.CREATED);
+        } catch (Exception e) {
+            return new ResponseEntity<Exception>(e, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -87,11 +87,7 @@ const Activity = () => {
           <p className="text-gray-500 mt-1">Procurement audit trail</p>
         </div>
         
-        {/* Immutability Notice from Wireframe */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 text-xs text-gray-500 max-w-sm">
-          <p className="font-semibold text-gray-700 mb-1">System Architecture Note:</p>
-          <p>Audit logs must be immutable. These entries must be un-editable, no edit or delete. Make sure your DB schema reflects this (no soft-delete on log records).</p>
-        </div>
+        
       </div>
 
       {/* Main Content Area */}

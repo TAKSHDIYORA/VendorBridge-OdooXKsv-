@@ -66,10 +66,10 @@ public class SecurityConfig{
 //                                .requestMatchers(HttpMethod.POST,"/api/category/**" ).hasRole("ADMIN")
 //                                .requestMatchers(HttpMethod.PUT,"/api/category/**" ).hasRole("ADMIN")
 //                                .requestMatchers(HttpMethod.DELETE,"/api/category/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.GET,"/api/product/**").permitAll()
+                                .requestMatchers(HttpMethod.POST,"/api/auth/register/vendor").permitAll()
+                                .requestMatchers(HttpMethod.POST,"/api/auth/register/staff").hasRole("ADMIN")
 //                                .requestMatchers(HttpMethod.GET,"/api/category/**").permitAll()
-////                               .requestMatchers("/api/auth/login").authenticated()
-                                .requestMatchers("/api/auth/**").permitAll()
+                               .requestMatchers("/api/auth/login").permitAll()
 
                                 .anyRequest().authenticated()
 

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ allowedRoles }) => {
   const { user } = useAuth();
+console.log(user);
 
   // 1. Not logged in? Kick to login screen.
   if (!user) {

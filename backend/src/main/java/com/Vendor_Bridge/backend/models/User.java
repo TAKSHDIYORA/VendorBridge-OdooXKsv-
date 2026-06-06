@@ -1,6 +1,7 @@
 package com.Vendor_Bridge.backend.models;
 
 import jakarta.persistence.*;
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +18,23 @@ public class User implements UserDetails {
        @Column(unique = true,nullable = false)
      private  String email;
 
-       @Column(nullable = false)
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    @Column(nullable = false)
     private  String password;
 
     public User(String email, String password, Role role) {
@@ -54,4 +71,15 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() { return true; }
 
+    public void setEmail(String mail) {
+           this.email = mail;
+    }
+
+    public void setPassword(@Nullable String encode) {
+      this.password = encode;
+       }
+
+    public void setRole(Role role) {
+           this.role = role;
+    }
 }

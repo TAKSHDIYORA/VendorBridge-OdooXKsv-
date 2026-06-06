@@ -1,6 +1,7 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Centralize your base URL so it's easy to change later when you deploy
 const API_BASE_URL = 'http://localhost:8080/api/auth';
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (vendorData) => {
   try {
     // The payload here will include email, password, firstName, lastName, phone, and role: 'VENDOR'
-    const response = await axios.post(`${API_BASE_URL}/register`, vendorData);
+    const response = await axios.post(`${API_BASE_URL}/register/vendor`, vendorData);
     
     return response.data;
   } catch (error) {
@@ -64,8 +65,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('vendorBridgeUser');
-  };
-
+    window.location.href = '/'; // Forces a hard reload back to the login screen
+};
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading }}>
       {!loading && children}
