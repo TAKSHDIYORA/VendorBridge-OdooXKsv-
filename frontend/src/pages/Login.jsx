@@ -5,13 +5,17 @@ import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, register } = useAuth(); // Pull functions from context
+  const { login, register } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
-    email: '', password: '', firstName: '', lastName: '', phone: '', role: '', country: 'in'
+    email: '', 
+    password: '', 
+    firstName: '', 
+    lastName: '', 
+    phone: ''
   });
 
   const handleChange = (e) => {
@@ -24,17 +28,23 @@ const Login = () => {
 
     try {
       if (isLogin) {
-        // --- EXECUTE LOGIN ---
+        // --- EXECUTE LOGIN (All Roles) ---
         await login(formData.email, formData.password);
         navigate('/dashboard'); 
       } else {
-        // --- EXECUTE REGISTER ---
-        await register(formData);
-        alert("Registration successful! Please login.");
+        // --- EXECUTE REGISTER (Forced as VENDOR) ---
+        // We package the form data and force the role to match your backend Enum
+        const registerPayload = {
+            ...formData,
+            role: 'VENDOR' 
+        };
+        
+        await register(registerPayload);
+        alert("Vendor registration successful! Please login.");
         setIsLogin(true); // Flip back to login view
       }
     } catch (err) {
-      setError('Authentication failed. Please try again.');
+      setError(err.response?.data || 'Authentication failed. Please try again.');
     }
   };
 
@@ -48,10 +58,10 @@ const Login = () => {
         </div>
         
         <h2 className="text-xl font-bold text-[#212529] mb-2 w-full text-center">
-          {isLogin ? 'Login to VendorBridge' : 'Create an Account'}
+          {isLogin ? 'Login to VendorBridge' : 'Vendor Registration'}
         </h2>
 
-        {error && <div className="w-full p-3 mb-4 bg-red-50 text-red-600 text-sm rounded text-center">{error}</div>}
+        {error && <div className="w-full p-3 mb-4 bg-red-50 text-red-600 text-sm rounded text-center border border-red-200">{error}</div>}
 
         <form onSubmit={handleSubmit} className="w-full mt-4">
           
@@ -59,7 +69,7 @@ const Login = () => {
           {isLogin && (
             <div className="space-y-4">
               <input 
-                type="email" name="email" placeholder="Email Address (Try 'vendor@test.com')" required
+                type="email" name="email" placeholder="Email Address" required
                 onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] text-sm"
               />
@@ -71,21 +81,18 @@ const Login = () => {
             </div>
           )}
 
-          {/* ----- REGISTRATION FIELDS ----- */}
+          {/* ----- VENDOR REGISTRATION FIELDS ----- */}
           {!isLogin && (
             <div className="space-y-5">
+              <div className="bg-blue-50 text-blue-800 p-3 rounded text-xs mb-4">
+                Note: This portal is for external vendor registration only. Internal staff accounts are provisioned by the Administrator.
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <input type="text" name="firstName" placeholder="First Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
-                <input type="text" name="lastName" placeholder="Last Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
-                <input type="email" name="email" placeholder="Email Address" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
-                <input type="password" name="password" placeholder="Password" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
-                
-                <select name="role" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm bg-white focus:border-[#714B67] focus:outline-none">
-                  <option value="">Select Role...</option>
-                  <option value="admin">Admin</option>
-                  <option value="officer">Procurement Officer</option>
-                  <option value="vendor">Vendor</option>
-                </select>
+                <input type="text" name="firstName" placeholder="First Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none focus:ring-1 focus:ring-[#714B67]" />
+                <input type="text" name="lastName" placeholder="Last Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none focus:ring-1 focus:ring-[#714B67]" />
+                <input type="email" name="email" placeholder="Company Email Address" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none focus:ring-1 focus:ring-[#714B67]" />
+                <input type="tel" name="phone" placeholder="Phone Number" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none focus:ring-1 focus:ring-[#714B67]" />
+                <input type="password" name="password" placeholder="Password" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none focus:ring-1 focus:ring-[#714B67] md:col-span-2" />
               </div>
             </div>
           )}
@@ -93,7 +100,7 @@ const Login = () => {
           {/* Action Button */}
           <div className="mt-8 flex justify-center">
             <button type="submit" className="w-full max-w-xs bg-[#714B67] hover:bg-[#5a3c52] text-white py-2.5 rounded transition-colors font-medium text-sm">
-              {isLogin ? 'Login' : 'Register'}
+              {isLogin ? 'Login' : 'Submit Vendor Application'}
             </button>
           </div>
         </form>
@@ -101,9 +108,9 @@ const Login = () => {
         {/* Toggle Link */}
         <div className="mt-6 pt-6 border-t border-gray-100 w-full text-center">
           <p className="text-sm text-gray-600">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {isLogin ? "Want to become a supplier? " : "Already registered? "}
             <button onClick={() => { setIsLogin(!isLogin); setError(''); }} type="button" className="text-[#714B67] font-semibold hover:underline">
-              {isLogin ? 'Register here' : 'Login here'}
+              {isLogin ? 'Apply here' : 'Login here'}
             </button>
           </p>
         </div>

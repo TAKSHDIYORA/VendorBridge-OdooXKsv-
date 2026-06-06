@@ -1,6 +1,9 @@
 // src/context/AuthContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 
+// Centralize your base URL so it's easy to change later when you deploy
+const API_BASE_URL = 'http://localhost:8080/api/auth';
 // 1. Create the Context
 const AuthContext = createContext();
 
@@ -18,35 +21,44 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // MOCK LOGIN FUNCTION (Will connect to Spring Boot later)
-  const login = async (email, password) => {
-    // SIMULATION: In reality, you'd do an axios.post('/api/auth/login') here
-    // We are faking a backend response based on the email typed.
+ 
+ const login = async (email, password) => {
+  try {
+    // 1. Send credentials to Spring Boot
+    const response = await axios.post(`${API_BASE_URL}/login`, {
+      email,
+      password
+    });
+
+    // 2. Extract the response (Your backend returns { token, email, role })
+    const userData = response.data;
+
+    // 3. Update React State and LocalStorage
+    setUser(userData);
+    localStorage.setItem('vendorBridgeUser', JSON.stringify(userData));
     
-    let simulatedRole = 'officer'; // Default role
-    if (email.includes('vendor')) simulatedRole = 'vendor';
-    if (email.includes('manager')) simulatedRole = 'approver';
-    if (email.includes('admin')) simulatedRole = 'admin';
+    return userData;
 
-    const mockUser = {
-      id: Math.floor(Math.random() * 1000),
-      email: email,
-      role: simulatedRole,
-      name: email.split('@')[0], // Just taking the first part of email as name
-      token: 'fake-jwt-token-12345'
-    };
+  } catch (error) {
+    // Extract the exact error message thrown by Spring Security (e.g., "Invalid email or password")
+    const errorMessage = error.response?.data || 'Server error occurred during login.';
+    throw new Error(errorMessage);
+  }
+};
 
-    setUser(mockUser);
-    localStorage.setItem('vendorBridgeUser', JSON.stringify(mockUser));
-    return mockUser;
-  };
 
-  // MOCK REGISTER FUNCTION
-  const register = async (userData) => {
-    // SIMULATION: axios.post('/api/auth/register', userData)
-    console.log("Registered user:", userData);
-    return true; 
-  };
+  const register = async (vendorData) => {
+  try {
+    // The payload here will include email, password, firstName, lastName, phone, and role: 'VENDOR'
+    const response = await axios.post(`${API_BASE_URL}/register`, vendorData);
+    
+    return response.data;
+  } catch (error) {
+    const errorMessage = error.response?.data || 'Failed to register vendor.';
+    throw new Error(errorMessage);
+  }
+};
+
 
   // LOGOUT FUNCTION
   const logout = () => {

@@ -1,4 +1,9 @@
 package com.Vendor_Bridge.backend.models;
 
-public class Role {
+
+public enum Role {
+    PROCUREMENT_OFFICER,
+    VENDOR,
+    MANAGER,
+    ADMIN
 }

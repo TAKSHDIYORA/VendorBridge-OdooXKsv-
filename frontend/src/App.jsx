@@ -23,7 +23,7 @@ const App = () => {
             <Route
               element={
                 <ProtectedRoute
-                  allowedRoles={["officer", "vendor", "admin", "approver"]}
+                  allowedRoles={["ROLE_OFFICER", "ROLE_VENDOR", "ROLE_ADMIN", "ROLE_APPROVER"]}
                 />
               }
             >
@@ -32,7 +32,7 @@ const App = () => {
             </Route>
 
             <Route
-              element={<ProtectedRoute allowedRoles={["officer", "admin"]} />}
+              element={<ProtectedRoute allowedRoles={["ROLE_OFFICER", "ROLE_ADMIN"]} />}
             >
               <Route path="/rfqs" element={<RFQs />} />
               <Route path="/vendors" element={<Vendors />} />
@@ -41,12 +41,12 @@ const App = () => {
               <Route path="/activity" element={<Activity />} />
             </Route>
             <Route
-              element={<ProtectedRoute allowedRoles={["approver", "admin"]} />}
+              element={<ProtectedRoute allowedRoles={["ROLE_APPROVER", "ROLE_ADMIN"]} />}
             >
               <Route path="/approvals" element={<Approvals />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={["vendor"]} />}>
+            <Route element={<ProtectedRoute allowedRoles={["ROLE_VENDOR"]} />}>
               <Route path="/quotations" element={<Quotations />} />
             </Route>
           </Route>
