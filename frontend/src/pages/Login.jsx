@@ -1,0 +1,116 @@
+// src/pages/Login.jsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const { login, register } = useAuth(); // Pull functions from context
+  const [isLogin, setIsLogin] = useState(true);
+  const [error, setError] = useState('');
+
+  // Form State
+  const [formData, setFormData] = useState({
+    email: '', password: '', firstName: '', lastName: '', phone: '', role: '', country: 'in'
+  });
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      if (isLogin) {
+        // --- EXECUTE LOGIN ---
+        await login(formData.email, formData.password);
+        navigate('/dashboard'); 
+      } else {
+        // --- EXECUTE REGISTER ---
+        await register(formData);
+        alert("Registration successful! Please login.");
+        setIsLogin(true); // Flip back to login view
+      }
+    } catch (err) {
+      setError('Authentication failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center p-4 py-12">
+      <div className={`bg-white p-8 rounded-lg shadow-sm border border-gray-200 w-full transition-all duration-300 flex flex-col items-center ${isLogin ? 'max-w-md' : 'max-w-2xl'}`}>
+        
+        {/* Logo Area */}
+        <div className="w-24 h-24 rounded-full border-2 border-[#714B67] flex items-center justify-center mb-6 bg-[#714B67]/5">
+          <span className="text-[#714B67] font-bold text-xl">VB</span>
+        </div>
+        
+        <h2 className="text-xl font-bold text-[#212529] mb-2 w-full text-center">
+          {isLogin ? 'Login to VendorBridge' : 'Create an Account'}
+        </h2>
+
+        {error && <div className="w-full p-3 mb-4 bg-red-50 text-red-600 text-sm rounded text-center">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="w-full mt-4">
+          
+          {/* ----- LOGIN FIELDS ----- */}
+          {isLogin && (
+            <div className="space-y-4">
+              <input 
+                type="email" name="email" placeholder="Email Address (Try 'vendor@test.com')" required
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] text-sm"
+              />
+              <input 
+                type="password" name="password" placeholder="Password" required
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded focus:outline-none focus:border-[#714B67] focus:ring-1 focus:ring-[#714B67] text-sm"
+              />
+            </div>
+          )}
+
+          {/* ----- REGISTRATION FIELDS ----- */}
+          {!isLogin && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <input type="text" name="firstName" placeholder="First Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
+                <input type="text" name="lastName" placeholder="Last Name" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
+                <input type="email" name="email" placeholder="Email Address" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
+                <input type="password" name="password" placeholder="Password" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm focus:border-[#714B67] focus:outline-none" />
+                
+                <select name="role" onChange={handleChange} required className="w-full px-4 py-2 border border-gray-300 rounded text-sm bg-white focus:border-[#714B67] focus:outline-none">
+                  <option value="">Select Role...</option>
+                  <option value="admin">Admin</option>
+                  <option value="officer">Procurement Officer</option>
+                  <option value="vendor">Vendor</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          <div className="mt-8 flex justify-center">
+            <button type="submit" className="w-full max-w-xs bg-[#714B67] hover:bg-[#5a3c52] text-white py-2.5 rounded transition-colors font-medium text-sm">
+              {isLogin ? 'Login' : 'Register'}
+            </button>
+          </div>
+        </form>
+
+        {/* Toggle Link */}
+        <div className="mt-6 pt-6 border-t border-gray-100 w-full text-center">
+          <p className="text-sm text-gray-600">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button onClick={() => { setIsLogin(!isLogin); setError(''); }} type="button" className="text-[#714B67] font-semibold hover:underline">
+              {isLogin ? 'Register here' : 'Login here'}
+            </button>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default Login;
