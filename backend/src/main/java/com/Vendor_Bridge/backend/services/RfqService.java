@@ -8,11 +8,14 @@ import com.Vendor_Bridge.backend.repositories.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static com.Vendor_Bridge.backend.models.QuotationStatus.REJECTED;
 
 @Service
 public class RfqService {
@@ -24,7 +27,9 @@ public class RfqService {
         this.rfqRepository = rfqRepository;
         this.userRepository = userRepository;
     }
-
+   public Rfq getRfq(Long id){
+        return rfqRepository.findById(id).get();
+   }
     public Rfq createRfq(RfqRequest request) {
         // 1. Authenticate the Officer
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -75,5 +80,20 @@ public class RfqService {
 
     public List<Rfq> getAllRfqs() {
         return rfqRepository.findAll();
+    }
+
+    public  List<Rfq> getRfqsByStatus(RfqStatus rfqStatus){
+        return rfqRepository.findByStatus(rfqStatus);
+    }
+    @Transactional
+    public void ChangeStatus(Long rfqId,RfqStatus status,boolean isChangeAll){
+        List<Rfq> rfqs = getAllRfqs();
+        for(Rfq rfq : rfqs){
+            if(rfq.getId()==rfqId){
+                rfq.setStatus(status);
+            }else if(isChangeAll){
+                rfq.setStatus(RfqStatus.CLOSED);
+            }
+        }
     }
 }

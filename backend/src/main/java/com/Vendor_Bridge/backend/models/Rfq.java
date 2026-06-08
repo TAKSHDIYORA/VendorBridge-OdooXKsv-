@@ -1,6 +1,8 @@
 package com.Vendor_Bridge.backend.models;
 
 import jakarta.persistence.*;
+import lombok.Builder;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -23,6 +25,7 @@ public class Rfq {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+
     private RfqStatus status;
 
     @Column(nullable = false)

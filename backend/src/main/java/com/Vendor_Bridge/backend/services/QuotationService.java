@@ -7,9 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.Vendor_Bridge.backend.models.QuotationStatus.PENDING_APPROVAL;
+import static com.Vendor_Bridge.backend.models.QuotationStatus.REJECTED;
 
 @Service
 public class QuotationService {
@@ -79,4 +83,28 @@ public class QuotationService {
     public List<Quotation> getQuotationsForRfq(Long rfqId) {
         return quotationRepository.findByRfqId(rfqId);
     }
+
+    @Transactional
+    public void ChangeStatus(Long rfqId,Long quoteId,QuotationStatus status,boolean isChangeAll){
+         List<Quotation> quotations = getQuotationsForRfq(rfqId);
+        for(Quotation quotation : quotations){
+            if(quotation.getId()==quoteId){
+                quotation.setStatus(status);
+            }else if(isChangeAll){
+                quotation.setStatus(REJECTED);
+            }
+//            quotationRepository.save(quotation);
+
+        }
+    }
+
+    public List<Quotation> getApprovedQuotations() throws  Exception{
+        try{
+              List<Quotation> quotations = quotationRepository.findByStatus(PENDING_APPROVAL);
+              return quotations;
+        }catch (Exception e){
+            throw  new Exception(e.getMessage());
+        }
+    }
+
 }

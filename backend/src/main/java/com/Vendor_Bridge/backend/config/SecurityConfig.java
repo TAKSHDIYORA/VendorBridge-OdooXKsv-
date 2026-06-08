@@ -25,54 +25,56 @@ import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig{
-    private  final JwtAuthenticationFilter jwtAuthenticationFilter;
-   public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter){
-       this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-   }
-   @Bean
-    public PasswordEncoder passwordEncoder(){
-       return new BCryptPasswordEncoder();
-   }
-   @Bean
-    public AuthenticationManager authenticationManager(UserService userService){
-       DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userService);
-       authenticationProvider.setPasswordEncoder(passwordEncoder());
-       return new ProviderManager(authenticationProvider);
-   }
-   @Bean
-    public CorsConfigurationSource corsConfigurationSource(){
-       CorsConfiguration configuration = new CorsConfiguration();
-       configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
-       configuration.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
-       configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
-       configuration.setExposedHeaders(Collections.singletonList("Authorization"));
-       configuration.setAllowCredentials(true); // Needed if you pass cookies or pass explicit auth tokens back/forth
+public class SecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-       UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-       source.registerCorsConfiguration("/**", configuration); // Applies this rule to all application paths
-       return source;
-   }
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http){
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(UserService userService) {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(authenticationProvider);
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:5173"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Cache-Control"));
+        configuration.setExposedHeaders(Collections.singletonList("Authorization"));
+        configuration.setAllowCredentials(true); // Needed if you pass cookies or pass explicit auth tokens back/forth
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // Applies this rule to all application paths
+        return source;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
 
         http.cors(cors -> cors.configure(http))
-                .csrf(csrf->csrf.disable())
-                .authorizeHttpRequests(auth->auth
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
 
-//                                .requestMatchers(HttpMethod.POST,"/api/product/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.PUT,"/api/product/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.DELETE,"/api/product/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.POST,"/api/category/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.PUT,"/api/category/**" ).hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.DELETE,"/api/category/**" ).hasRole("ADMIN")
-                                .requestMatchers(HttpMethod.POST,"/api/auth/register/vendor").permitAll()
-                                .requestMatchers(HttpMethod.POST,"/api/auth/register/staff").hasRole("ADMIN")
-//                                .requestMatchers(HttpMethod.GET,"/api/category/**").permitAll()
-                               .requestMatchers("/api/auth/login").permitAll()
-                                .requestMatchers("/api/auth/users/vendors").hasAnyRole("ADMIN","OFFICER")
-                                .requestMatchers("/api/rfqs/create").hasAnyRole("ADMIN","OFFICER")
-
+//
+                                .requestMatchers(HttpMethod.POST, "/api/auth/register/vendor").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/auth/register/staff").hasRole("ADMIN")
+                                .requestMatchers("/api/auth/login").permitAll()
+                                .requestMatchers("/api/auth/users/vendors").hasAnyRole("ADMIN", "OFFICER")
+                                .requestMatchers("/api/rfqs/create").hasAnyRole("ADMIN", "OFFICER")
+                                .requestMatchers("/api/quotations/approvedByOfficer/{rfqId}/{quoteId}").hasRole("OFFICER")
+                                .requestMatchers("/api/rfqs/all").hasAnyRole("OFFICER","ADMIN","APPROVER")
+                                .requestMatchers("/api/rfqs/open").hasAnyRole("VENDOR")
+                                .requestMatchers("/api/quotations/approved").hasAnyRole("OFFICER","ADMIN","APPROVER")
 
                                 .anyRequest().authenticated()
 

@@ -16,9 +16,17 @@ const CompareQuotes = () => {
     const fetchRfqs = async () => {
       try {
         const token = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.token;
-        const response = await axios.get(`${API_BASE_URL}/rfqs/all`, {
+        const role = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.role;
+        let response = null;
+        if(role=='ROLE_OFFICER'){
+        response  = await axios.get(`${API_BASE_URL}/rfqs/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+      }else{
+         response  = await axios.get(`${API_BASE_URL}/rfqs/open`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
         setRfqs(response.data);
       } catch (err) {
         console.error("Failed to fetch RFQs", err);
@@ -55,9 +63,20 @@ const CompareQuotes = () => {
   };
 
   // 3. Handle Awarding the RFQ (Placeholder for next phase)
-  const handleAward = (quotationId, vendorEmail) => {
+  const handleAward = async (quotationId, vendorEmail,rfqId) => {
+    console.log("quote id  ",rfqId);
+    
     if (window.confirm(`Are you sure you want to award this contract to ${vendorEmail}? This will generate a Purchase Order.`)) {
-      alert(`Backend integration pending for Awarding Quote #${quotationId}`);
+            const token = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.token;
+
+      const response = await axios.get(`${API_BASE_URL}/quotations/approvedByOfficer/${rfqId}/${quotationId}`,{
+        headers : {'Authorization' : `Bearer ${token}`}
+      });
+      console.log("response");
+      
+      console.log(response);
+      
+      window.alert(response.data);
     }
   };
 
@@ -167,7 +186,7 @@ const CompareQuotes = () => {
                     {quotations.map(quote => (
                       <td key={quote.id} className="px-6 py-4 border-r text-center">
                         <button 
-                          onClick={() => handleAward(quote.id, quote.vendor.email)}
+                          onClick={() => handleAward(quote.id, quote.vendor.email,selectedRfq.id)}
                           className="bg-[#714B67] text-white px-4 py-2 rounded text-sm font-medium hover:bg-[#5a3c52] transition-colors w-full"
                         >
                           Award Contract

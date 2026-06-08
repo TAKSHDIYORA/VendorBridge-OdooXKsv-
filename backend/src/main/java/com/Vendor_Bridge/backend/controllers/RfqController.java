@@ -2,6 +2,7 @@ package com.Vendor_Bridge.backend.controllers;
 
 import com.Vendor_Bridge.backend.dtos.RfqRequest;
 import com.Vendor_Bridge.backend.models.Rfq;
+import com.Vendor_Bridge.backend.models.RfqStatus;
 import com.Vendor_Bridge.backend.services.RfqService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,4 +39,10 @@ public class RfqController {
     public ResponseEntity<List<Rfq>> getAllRfqs() {
         return ResponseEntity.ok(rfqService.getAllRfqs());
     }
+
+    @GetMapping("/open")
+    public ResponseEntity<List<Rfq>> getRfqForOfficer(){
+        return ResponseEntity.ok(rfqService.getRfqsByStatus(RfqStatus.OPEN));
+    }
+
 }
