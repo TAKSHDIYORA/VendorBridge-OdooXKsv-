@@ -11,7 +11,7 @@ const Approvals = () => {
   const [error, setError] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-const API_BASE_URL = process.env.VITE_BACKEND_API_URL;
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
   // 2. Fetch the Queue on Mount
   useEffect(() => {
     const fetchPendingQueue = async () => {
