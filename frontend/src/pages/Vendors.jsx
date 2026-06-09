@@ -7,6 +7,7 @@ const Vendors = () => {
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const API_BASE_URL = process.env.BACKEND_API_URL;
   
   // Search and Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,7 +20,7 @@ const Vendors = () => {
         // Assuming you store your login response token in localStorage
         const token = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.token;
         
-        const response = await axios.get('http://localhost:8080/api/auth/users/vendors', {
+        const response = await axios.get(`${API_BASE_URL}/auth/users/vendors`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

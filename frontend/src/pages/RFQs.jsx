@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const RFQs = () => {
-  const API_BASE_URL = 'http://localhost:8080/api';
+  const API_BASE_URL = process.env.BACKEND_API_URL;
 
   // --- STATE MANAGEMENT ---
   const [formData, setFormData] = useState({ title: '', description: '', deadline: '' });

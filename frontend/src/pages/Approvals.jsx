@@ -11,7 +11,7 @@ const Approvals = () => {
   const [error, setError] = useState(null);
   const [remarks, setRemarks] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = process.env.BACKEND_API_URL;
   // 2. Fetch the Queue on Mount
   useEffect(() => {
     const fetchPendingQueue = async () => {

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 // Centralize your base URL so it's easy to change later when you deploy
-const API_BASE_URL = 'http://localhost:8080/api/auth';
+const API_BASE_URL = process.env.BACKEND_API_URL;
 // 1. Create the Context
 const AuthContext = createContext();
 
