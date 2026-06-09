@@ -1,13 +1,13 @@
-# Stage 1: Build the application using OpenJDK 25
-FROM openjdk:25-jdk-slim AS build
+# Stage 1: Build the application using JDK 25
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
-# Copy Maven wrapper files and pom.xml first to leverage caching
+# Copy Maven wrapper files and pom.xml first
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Grant execute permission for the wrapper and download dependencies
+# Grant execute permission and fetch dependencies
 RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
 
@@ -15,14 +15,13 @@ RUN ./mvnw dependency:go-offline -B
 COPY src src
 RUN ./mvnw clean package -DskipTests
 
-# Stage 2: Run the application using the same runtime environment
-FROM openjdk:25-jdk-slim
+# Stage 2: Run the application using the matching JRE/JDK environment
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 # Copy the built jar from Stage 1
 COPY --from=build /app/target/*.jar app.jar
 
-# Make sure Spring Boot respects the dynamic cloud port variable
 EXPOSE 8080
 ENV PORT=8080
 
