@@ -75,6 +75,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/rfqs/all").hasAnyRole("OFFICER","ADMIN","APPROVER")
                                 .requestMatchers("/api/rfqs/open").hasAnyRole("VENDOR")
                                 .requestMatchers("/api/quotations/approved").hasAnyRole("OFFICER","ADMIN","APPROVER")
+                                .requestMatchers("/testing/").permitAll()
 
                                 .anyRequest().authenticated()
 
