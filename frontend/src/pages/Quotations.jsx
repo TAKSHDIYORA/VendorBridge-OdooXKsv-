@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Quotations = () => {
-  const API_BASE_URL = process.env.BACKEND_API_URL;
+  const API_BASE_URL = process.env.VITE_BACKEND_API_URL;
 
   // --- STATE MANAGEMENT ---
   const [availableRfqs, setAvailableRfqs] = useState([]);

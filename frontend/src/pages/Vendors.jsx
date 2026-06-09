@@ -7,7 +7,7 @@ const Vendors = () => {
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const API_BASE_URL = process.env.BACKEND_API_URL;
+  const API_BASE_URL = process.env.VITE_BACKEND_API_URL;
   
   // Search and Filter States
   const [searchTerm, setSearchTerm] = useState('');
