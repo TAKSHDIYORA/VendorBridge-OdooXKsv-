@@ -79,7 +79,7 @@ public class SecurityConfig {
                                 .requestMatchers("/api/rfqs/create").hasAnyRole("ADMIN", "OFFICER")
                                 .requestMatchers("/api/quotations/approvedByOfficer/{rfqId}/{quoteId}").hasRole("OFFICER")
                                 .requestMatchers("/api/rfqs/all").hasAnyRole("OFFICER","ADMIN","APPROVER")
-                                .requestMatchers("/api/rfqs/open").hasAnyRole("VENDOR")
+                                .requestMatchers("/api/rfqs/open").hasAnyRole("VENDOR","OFFICER","ADMIN","APPROVER")
                                 .requestMatchers("/api/quotations/approved").hasAnyRole("OFFICER","ADMIN","APPROVER")
                                 .requestMatchers("/testing/").permitAll()
 
