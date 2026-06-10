@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
  const login = async (email, password) => {
   try {
     // 1. Send credentials to Spring Boot
-    const response = await axios.post(`${API_BASE_URL}/login`, {
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, {
       email,
       password
     });
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (vendorData) => {
   try {
     // The payload here will include email, password, firstName, lastName, phone, and role: 'VENDOR'
-    const response = await axios.post(`${API_BASE_URL}/register/vendor`, vendorData);
+    const response = await axios.post(`${API_BASE_URL}/auth/register/vendor`, vendorData);
     
     return response.data;
   } catch (error) {
