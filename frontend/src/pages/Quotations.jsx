@@ -16,21 +16,30 @@ const Quotations = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // --- FETCH AVAILABLE RFQS ---
   useEffect(() => {
     const fetchRfqs = async () => {
       try {
         const userStr = localStorage.getItem('vendorBridgeUser');
         if (!userStr) return;
         const { token } = JSON.parse(userStr);
-
+        const role = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.role;
+        let response;
+        let Rfqs ;
+         response.data.filter(rfq => rfq.status === 'OPEN');
+if(role=="ROLE_VENDOR"){
+const response = await axios.get(`${API_BASE_URL}/rfqs/open`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        Rfqs = response.data;
+}else{
         const response = await axios.get(`${API_BASE_URL}/rfqs/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+        Rfqs = response.data;
+      }
         
-        // Filter to only show OPEN RFQs
-        const openRfqs = response.data.filter(rfq => rfq.status === 'OPEN');
-        setAvailableRfqs(openRfqs);
+        
+        setAvailableRfqs(Rfqs);
       } catch (error) {
         console.error("Failed to fetch RFQs", error);
       }
