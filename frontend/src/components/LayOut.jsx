@@ -55,7 +55,7 @@ const Layout = () => {
     { 
       name: "Compare Quotes", 
       path: "/compare", 
-      allowedRoles: ["ROLE_OFFICER", "ROLE_ADMIN"] 
+      allowedRoles: ["ROLE_OFFICER"] 
     },
     { 
       name: "Approvals", 

@@ -25,6 +25,28 @@ public class BackendApplication {
 				userRepository.save(admin);
 				System.out.println("✅ Default Admin account created successfully!");
 			}
+
+			if (userRepository.findByEmail("officer@vendorbridge.com").isEmpty()) {
+				User officer = new User();
+				officer.setEmail("officer@vendorbridge.com");
+				// Hash the password before saving!
+				officer.setPassword(passwordEncoder.encode("officer@123"));
+				officer.setRole(Role.OFFICER);
+
+				userRepository.save(officer);
+				System.out.println("✅ Default Officer account created successfully!");
+			}
+
+			if (userRepository.findByEmail("approver@vendorbridge.com").isEmpty()) {
+				User approver = new User();
+				approver.setEmail("approver@vendorbridge.com");
+				// Hash the password before saving!
+				approver.setPassword(passwordEncoder.encode("approver@123"));
+				approver.setRole(Role.APPROVER);
+
+				userRepository.save(approver);
+				System.out.println("✅ Default Approver account created successfully!");
+			}
 		};
 	}
 

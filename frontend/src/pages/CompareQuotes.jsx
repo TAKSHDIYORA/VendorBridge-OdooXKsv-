@@ -17,7 +17,7 @@ const CompareQuotes = () => {
       try {
         const token = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.token;
         const role = JSON.parse(localStorage.getItem('vendorBridgeUser'))?.role;
-        let response = null;
+        let response = [];
         if(role=='ROLE_OFFICER'){
         response  = await axios.get(`${API_BASE_URL}/rfqs/all`, {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -27,6 +27,8 @@ const CompareQuotes = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
       }
+      console.log(response);
+      
         setRfqs(response.data);
       } catch (err) {
         console.error("Failed to fetch RFQs", err);

@@ -36,10 +36,16 @@ const App = () => {
             >
               <Route path="/rfqs" element={<RFQs />} />
               <Route path="/vendors" element={<Vendors />} />
-              <Route path="/compare" element={<CompareQuotes />} />
+              
               <Route path="/reports" element={<Reports />} />
               <Route path="/activity" element={<Activity />} />
             </Route>
+<Route
+              element={<ProtectedRoute allowedRoles={["ROLE_OFFICER"]} />}
+            >
+<Route path="/compare" element={<CompareQuotes />} />
+</Route>
+
             <Route
               element={<ProtectedRoute allowedRoles={["ROLE_APPROVER", "ROLE_ADMIN"]} />}
             >
